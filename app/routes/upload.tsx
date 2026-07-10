@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { type ComponentProps, useState } from 'react'
 import Navbar from "~/components/Navbar";
 import FileUploader from "~/components/FileUploader";
 import {usePuterStore} from "~/lib/puter";
@@ -8,7 +8,7 @@ import {generateUUID} from "~/lib/utils";
 import {prepareInstructions} from "~/constants";
 
 const Upload: React.FunctionComponent = () => {
-    const {auth, isLoading, fs, ai, kv} = usePuterStore();
+    const {fs, ai, kv} = usePuterStore();
     const navigate = useNavigate();
     const [isProcessing, setIsProcessing] = useState(false);
     const [statusText, setStatusText] = useState('');
@@ -65,13 +65,12 @@ const Upload: React.FunctionComponent = () => {
         await kv.set(`resume:${uuid}`, JSON.stringify(data));
         setStatusText('Analyzed! Redirecting to results...');
         console.log(data);
+        navigate(`/resume/${uuid}`);
     }
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit: ComponentProps<"form">["onSubmit"] = (e) => {
         e.preventDefault();
-        const form = e.currentTarget.closest('form');
-        if (!form) return;
-        const formData = new FormData(form);
+        const formData = new FormData(e.currentTarget);
 
         const companyName = formData.get('company-name');
         const jobTitle = formData.get('job-title');
@@ -79,7 +78,12 @@ const Upload: React.FunctionComponent = () => {
 
         if(!file) return;
 
-        handleAnalyze({companyName: companyName as string, jobTitle: jobTitle as string, jobDescription: jobDescription as string, file})
+        void handleAnalyze({
+            companyName: companyName as string,
+            jobTitle: jobTitle as string,
+            jobDescription: jobDescription as string,
+            file
+        })
 
     }
     return (
@@ -93,7 +97,7 @@ const Upload: React.FunctionComponent = () => {
                     {isProcessing ? (
                         <>
                             <h2>{statusText}</h2>
-                            <img src="/images/resume-scan.gif" className="w-full"/>
+                            <img src="/images/resume-scan.gif" alt="Resume scan in progress" className="w-full"/>
                         </>
                     ) : (
                         <h2>Drop your resume for an ATS Score and improvement tips</h2>
